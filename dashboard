@@ -1,0 +1,1145 @@
+import React, { useState, useEffect } from 'react';
+import TenantSideBar from '../../Pages/TENANT/TenantSideBar';
+import TenantNavBar from '../../Pages/TENANT/TenantNavBar';
+import { HeartIcon, BellIcon, ChatBubbleLeftRightIcon, WrenchScrewdriverIcon, CreditCardIcon, PlusIcon, TrashIcon, EyeIcon, XMarkIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
+
+const TenantDashboard = () => {
+  const [currentSection, setCurrentSection] = useState('Dashboard');
+  const [favouriteProperties, setFavouriteProperties] = useState([
+    {
+      id: 1,
+      title: "Modern Apartment in Downtown",
+      location: "123 Main St, City Center",
+      price: "$1,200/month",
+      image: "/api/placeholder/300/200",
+      bedrooms: 2,
+      bathrooms: 1
+    },
+    {
+      id: 2,
+      title: "Cozy Studio Near Park",
+      location: "456 Oak Ave, Green District",
+      price: "$800/month",
+      image: "/api/placeholder/300/200",
+      bedrooms: 1,
+      bathrooms: 1
+    }
+  ]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortKey, setSortKey] = useState(null);
+  const [sortAsc, setSortAsc] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [removeConfirmId, setRemoveConfirmId] = useState(null);
+
+  // Number of items per page for pagination
+  const itemsPerPage = 4;
+
+  // Function to toggle sorting key and order
+  const toggleSort = (key) => {
+    if (sortKey === key) {
+      setSortAsc(!sortAsc);
+    } else {
+      setSortKey(key);
+      setSortAsc(true);
+    }
+  };
+
+  // Confirm remove favorite property
+  const confirmRemoveFavourite = (id) => {
+    setRemoveConfirmId(id);
+  };
+
+  // Cancel remove favorite property
+  const cancelRemoveFavourite = () => {
+    setRemoveConfirmId(null);
+  };
+
+  // Filter favouriteProperties by search term
+  const filteredProperties = favouriteProperties.filter((property) =>
+    property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    property.location.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Sort filtered properties
+  const sortedProperties = [...filteredProperties].sort((a, b) => {
+    if (!sortKey) return 0;
+    let aValue = a[sortKey];
+    let bValue = b[sortKey];
+    // Convert price string to number for sorting if sorting by price
+    if (sortKey === 'price') {
+      aValue = Number(aValue.replace(/[^0-9.-]+/g,""));
+      bValue = Number(bValue.replace(/[^0-9.-]+/g,""));
+    }
+    if (aValue < bValue) return sortAsc ? -1 : 1;
+    if (aValue > bValue) return sortAsc ? 1 : -1;
+    return 0;
+  });
+
+  // Calculate total pages
+  const totalPages = Math.ceil(sortedProperties.length / itemsPerPage);
+
+  // Paginate sorted properties
+  const paginatedProperties = sortedProperties.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // Reset current page if filtered properties change and currentPage is out of range
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(1);
+    }
+  }, [totalPages, currentPage]);
+
+  // Removed duplicate declaration of selectedProperty and setSelectedProperty
+
+  const [notifications, setNotifications] = useState([
+    {
+      id: 1,
+      type: "maintenance",
+      title: "Maintenance Scheduled",
+      message: "Your AC repair is scheduled for tomorrow at 2 PM",
+      time: "2 hours ago",
+      read: false
+    },
+    {
+      id: 2,
+      type: "payment",
+      title: "Payment Reminder",
+      message: "Your rent payment is due in 3 days",
+      time: "1 day ago",
+      read: false
+    },
+    {
+      id: 3,
+      type: "general",
+      title: "Building Notice",
+      message: "Water will be shut off for maintenance on Sunday 9-11 AM",
+      time: "3 days ago",
+      read: true
+    }
+  ]);
+
+  const [messages, setMessages] = useState([
+    {
+      id: 1,
+      sender: "Landlord",
+      message: "Hi! Just checking if everything is okay with the apartment.",
+      time: "10:30 AM",
+      isOwn: false
+    },
+    {
+      id: 2,
+      sender: "You",
+      message: "Yes, everything is great! Thank you for checking.",
+      time: "10:45 AM",
+      isOwn: true
+    }
+  ]);
+
+  const [maintenanceRequests, setMaintenanceRequests] = useState([
+    {
+      id: 1,
+      title: "Leaky Faucet",
+      description: "Kitchen faucet is dripping constantly",
+      status: "In Progress",
+      date: "2024-01-15",
+      priority: "Medium"
+    },
+    {
+      id: 2,
+      title: "Broken Light Fixture",
+      description: "Living room ceiling light not working",
+      status: "Completed",
+      date: "2024-01-10",
+      priority: "Low"
+    }
+  ]);
+
+  const [paymentHistory, setPaymentHistory] = useState([
+    {
+      id: 1,
+      amount: "$1,200",
+      type: "Rent",
+      date: "2024-01-01",
+      status: "Paid",
+      method: "Bank Transfer"
+    },
+    {
+      id: 2,
+      amount: "$50",
+      type: "Utilities",
+      date: "2024-01-01",
+      status: "Paid",
+      method: "Credit Card"
+    },
+    {
+      id: 3,
+      amount: "$1,200",
+      type: "Rent",
+      date: "2024-02-01",
+      status: "Pending",
+      method: "Bank Transfer"
+    }
+  ]);
+
+  const [newMessage, setNewMessage] = useState('');
+  const [newMaintenanceRequest, setNewMaintenanceRequest] = useState({
+    title: '',
+    description: '',
+    priority: 'Medium'
+  });
+  const [selectedProperty, setSelectedProperty] = useState(null);
+  const [isTyping, setIsTyping] = useState(false);
+  const [attachments, setAttachments] = useState([]);
+  const [editingRequestId, setEditingRequestId] = useState(null);
+  const [editRequestData, setEditRequestData] = useState({ title: '', description: '', priority: 'Medium' });
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newProperty, setNewProperty] = useState({
+    title: '',
+    location: '',
+    price: '',
+    image: '/api/placeholder/300/200',
+    bedrooms: 0,
+    bathrooms: 0,
+  });
+
+  // Simulate typing indicator (for demo)
+  useEffect(() => {
+    let timeout;
+    if (newMessage) {
+      setIsTyping(true);
+      timeout = setTimeout(() => setIsTyping(false), 1000);
+    } else {
+      setIsTyping(false);
+    }
+    return () => clearTimeout(timeout);
+  }, [newMessage]);
+
+  const removeFavourite = (id) => {
+    setFavouriteProperties(prev => prev.filter(prop => prop.id !== id));
+  };
+
+  const markNotificationAsRead = (id) => {
+    setNotifications(prev =>
+      prev.map(notif =>
+        notif.id === id ? { ...notif, read: true } : notif
+      )
+    );
+  };
+
+  const handleAttachment = (e) => {
+    const files = Array.from(e.target.files);
+    setAttachments(files);
+  };
+
+  const sendMessage = () => {
+    if (newMessage.trim() || attachments.length) {
+      const message = {
+        id: messages.length + 1,
+        sender: "You",
+        message: newMessage,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isOwn: true,
+        status: "Sent",
+        attachments: attachments,
+      };
+      setMessages(prev => [...prev, message]);
+      setNewMessage('');
+      setAttachments([]);
+    }
+  };
+
+  const submitMaintenanceRequest = () => {
+    if (newMaintenanceRequest.title && newMaintenanceRequest.description) {
+      const request = {
+        id: maintenanceRequests.length + 1,
+        ...newMaintenanceRequest,
+        status: "Pending",
+        date: new Date().toISOString().split('T')[0]
+      };
+      setMaintenanceRequests(prev => [...prev, request]);
+      setNewMaintenanceRequest({ title: '', description: '', priority: 'Medium' });
+    }
+  };
+
+  const handleEditRequest = (request) => {
+    setEditingRequestId(request.id);
+    setEditRequestData({
+      title: request.title,
+      description: request.description,
+      priority: request.priority
+    });
+  };
+
+  const saveEditRequest = (id) => {
+    setMaintenanceRequests(prev =>
+      prev.map(req =>
+        req.id === id
+          ? { ...req, ...editRequestData }
+          : req
+      )
+    );
+    setEditingRequestId(null);
+  };
+
+  const cancelEditRequest = () => {
+    setEditingRequestId(null);
+  };
+
+  const closeModal = () => setSelectedProperty(null);
+
+  const openAddModal = () => setIsAddModalOpen(true);
+  const closeAddModal = () => setIsAddModalOpen(false);
+
+  const handleAddProperty = () => {
+    if (newProperty.title && newProperty.location && newProperty.price) {
+      setFavouriteProperties(prev => [...prev, { ...newProperty, id: prev.length + 1 }]);
+      setNewProperty({
+        title: '',
+        location: '',
+        price: '',
+        image: '/api/placeholder/300/200',
+        bedrooms: 0,
+        bathrooms: 0,
+      });
+      closeAddModal();
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Completed': return 'text-green-600 bg-green-100';
+      case 'In Progress': return 'text-blue-600 bg-blue-100';
+      case 'Pending': return 'text-yellow-600 bg-yellow-100';
+      case 'Paid': return 'text-green-600 bg-green-100';
+      default: return 'text-gray-600 bg-gray-100';
+    }
+  };
+
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case 'High': return 'text-red-600 bg-red-100';
+      case 'Medium': return 'text-yellow-600 bg-yellow-100';
+      case 'Low': return 'text-green-600 bg-green-100';
+      default: return 'text-gray-600 bg-gray-100';
+    }
+  };
+
+  const notificationTypeIcon = {
+    maintenance: <WrenchScrewdriverIcon className="h-5 w-5 text-orange-500 mr-2" />,
+    payment: <CreditCardIcon className="h-5 w-5 text-purple-500 mr-2" />,
+    general: <BellIcon className="h-5 w-5 text-yellow-500 mr-2" />,
+  };
+
+  const deleteNotification = (id) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
+  const cancelRequest = (id) => {
+    setMaintenanceRequests(prev => prev.filter(req => req.id !== id));
+  };
+
+  // Simple stats calculation
+  const totalPaid = paymentHistory
+    .filter(p => p.status === 'Paid')
+    .reduce((sum, p) => sum + Number(p.amount.replace(/[^0-9.]/g, '')), 0);
+
+  const resolvedRequests = maintenanceRequests.filter(r => r.status === 'Completed').length;
+  const pendingRequests = maintenanceRequests.filter(r => r.status === 'Pending').length;
+
+  // Example handler for payment gateway integration (stub)
+  const handleMakePayment = () => {
+    // Integrate with your payment gateway here (e.g., Stripe, Razorpay, PayPal)
+    alert('Redirecting to payment gateway...');
+  };
+
+  // Example handler for downloading receipt/invoice (stub)
+  const downloadReceipt = (payment) => {
+    // Replace with actual download logic (e.g., generate PDF, fetch from server)
+    alert(`Downloading receipt for payment on ${payment.date}`);
+  };
+
+  // Example data for charts (replace with real data as needed)
+  const monthlyRentData = [
+    { month: 'Jan', rent: 1200 },
+    { month: 'Feb', rent: 1200 },
+    { month: 'Mar', rent: 1200 },
+    { month: 'Apr', rent: 1200 },
+    { month: 'May', rent: 1200 },
+    { month: 'Jun', rent: 1200 },
+    { month: 'Jul', rent: 1200 },
+    { month: 'Aug', rent: 1200 },
+    { month: 'Sep', rent: 1200 },
+    { month: 'Oct', rent: 1200 },
+    { month: 'Nov', rent: 1200 },
+    { month: 'Dec', rent: 1200 },
+  ];
+
+  const paymentBreakdownData = [
+    { name: 'Rent', value: 14400 },
+    { name: 'Utilities', value: 600 },
+    { name: 'Other', value: 200 },
+  ];
+
+  const COLORS = ['#34d399', '#6366f1', '#f59e42'];
+
+  const maintenanceTimelineData = [
+    { name: 'Submitted', value: 5 },
+    { name: 'In Progress', value: 2 },
+    { name: 'Completed', value: 8 },
+  ];
+
+  const satisfactionScore = 4.5; // out of 5
+
+  const paymentSuccessRate = 98; // percent
+
+  const occupancyRate = 95; // percent
+
+  const failedPayments = 2;
+  const successfulPayments = 98;
+
+  const averageResolutionTime = '2 days';
+
+  const upcomingPayments = [
+    { date: '2024-08-05', amount: '$1,200', type: 'Rent' },
+    { date: '2024-08-10', amount: '$50', type: 'Utilities' },
+  ];
+
+  const discountSavings = 100; // Example
+
+  const unreadNotifications = notifications.filter(n => !n.read).length;
+  const readNotifications = notifications.filter(n => n.read).length;
+
+  const previousMonthPaid = 1200;
+  const currentMonthPaid = 1200;
+  const percentChange = ((currentMonthPaid - previousMonthPaid) / previousMonthPaid) * 100;
+
+  const heatmapData = [
+    { area: 'Kitchen', requests: 3 },
+    { area: 'Living Room', requests: 2 },
+    { area: 'Bathroom', requests: 4 },
+  ];
+
+  return (
+    <div className="flex h-screen">
+      <TenantSideBar setCurrentSection={setCurrentSection} />
+      <div className="flex flex-col flex-1">
+        <TenantNavBar currentSection={currentSection} />
+        {/* Main content area */}
+        <main
+          className="flex-1 p-6 bg-gray-50 overflow-y-auto transition-all duration-500 ease-in-out"
+          role="main"
+          aria-label="Tenant Dashboard Main Content"
+        >
+          {/* Hero Section */}
+          <div
+            className="bg-gradient-to-r from-blue-700 to-purple-700 rounded-lg p-8 text-white mb-12 transition-shadow duration-300 hover:shadow-xl"
+            role="region"
+            aria-label="Welcome Section"
+          >
+            <h1 className="text-4xl font-extrabold mb-4 tracking-tight">Welcome to Your Dashboard</h1>
+            <p className="text-blue-200 text-lg mb-6">
+              Manage your rental experience with ease. View your favorite properties,
+              track maintenance requests, and stay updated with notifications.
+            </p>
+            <div className="mt-4 flex space-x-6">
+              <div className="bg-white bg-opacity-20 rounded-lg p-3 border-2 border-blue-300">
+                <div className="text-2xl font-bold" aria-label="Favorite Properties Count">{favouriteProperties.length}</div>
+                <div className="text-sm">Favorite Properties</div>
+              </div>
+              <div className="bg-white bg-opacity-20 rounded-lg p-3 border-2 border-yellow-300">
+                <div className="text-2xl font-bold" aria-label="New Notifications Count">{notifications.filter(n => !n.read).length}</div>
+                <div className="text-sm">New Notifications</div>
+              </div>
+              <div className="bg-white bg-opacity-20 rounded-lg p-3 border-2 border-orange-300">
+                <div className="text-2xl font-bold" aria-label="Pending Requests Count">{maintenanceRequests.filter(r => r.status === 'Pending').length}</div>
+                <div className="text-sm">Pending Requests</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Dashboard Analytics Section */}
+          <div className="mb-8" role="region" aria-label="Dashboard Analytics">
+            <div className="bg-white rounded-xl shadow-lg p-6 flex flex-col gap-8 border border-blue-100">
+              <div className="flex items-center mb-4">
+                <ChartBarIcon className="h-8 w-8 text-blue-600 mr-3" aria-hidden="true" />
+                <h2 className="text-xl font-bold text-blue-700">Dashboard Analytics</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {/* 1. Monthly Rent Trend Chart */}
+                <div className="bg-gray-50 rounded-lg p-4 shadow" aria-label="Monthly Rent Trend">
+                  <h3 className="font-semibold mb-2">Monthly Rent Trend</h3>
+                  <ResponsiveContainer width="100%" height={120}>
+                    <LineChart data={monthlyRentData}>
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="rent" stroke="#6366f1" strokeWidth={2} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                {/* 2. Payment Breakdown Pie Chart */}
+                <div className="bg-gray-50 rounded-lg p-4 shadow" aria-label="Payment Breakdown">
+                  <h3 className="font-semibold mb-2">Payment Breakdown</h3>
+                  <ResponsiveContainer width="100%" height={120}>
+                    <PieChart>
+                      <Pie data={paymentBreakdownData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={40} label>
+                        {paymentBreakdownData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                {/* 3. Maintenance Request Timeline */}
+                <div className="bg-gray-50 rounded-lg p-4 shadow" aria-label="Maintenance Timeline">
+                  <h3 className="font-semibold mb-2">Maintenance Timeline</h3>
+                  <BarChart width={200} height={120} data={maintenanceTimelineData}>
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="value" fill="#f59e42" />
+                  </BarChart>
+                </div>
+                {/* 4. Average Resolution Time */}
+                <div className="bg-gray-50 rounded-lg p-4 shadow" aria-label="Average Resolution Time">
+                  <h3 className="font-semibold mb-2">Avg. Resolution Time</h3>
+                  <div className="text-2xl font-bold text-blue-600">{averageResolutionTime}</div>
+                </div>
+                {/* 5. Upcoming Payments & Reminders */}
+                <div className="bg-gray-50 rounded-lg p-4 shadow" aria-label="Upcoming Payments">
+                  <h3 className="font-semibold mb-2">Upcoming Payments</h3>
+                  <ul>
+                    {upcomingPayments.map((p, idx) => (
+                      <li key={idx} className="text-sm text-gray-700">{p.date}: <span className="font-semibold">{p.amount}</span> ({p.type})</li>
+                    ))}
+                  </ul>
+                </div>
+                {/* 6. Property Occupancy Rate */}
+                <div className="bg-gray-50 rounded-lg p-4 shadow" aria-label="Occupancy Rate">
+                  <h3 className="font-semibold mb-2">Occupancy Rate</h3>
+                  <div className="text-2xl font-bold text-green-600">{occupancyRate}%</div>
+                </div>
+                {/* 7. Interactive Filters (Demo) */}
+                <div className="bg-gray-50 rounded-lg p-4 shadow" aria-label="Analytics Filters">
+                  <h3 className="font-semibold mb-2">Analytics Filters</h3>
+                  <select className="border rounded px-2 py-1">
+                    <option>Last 30 days</option>
+                    <option>Last 6 months</option>
+                    <option>Year to date</option>
+                  </select>
+                </div>
+                {/* 8. Savings & Discounts */}
+                <div className="bg-gray-50 rounded-lg p-4 shadow" aria-label="Savings & Discounts">
+                  <h3 className="font-semibold mb-2">Savings & Discounts</h3>
+                  <div className="text-2xl font-bold text-purple-600">${discountSavings}</div>
+                </div>
+                {/* 9. Notifications Summary */}
+                <div className="bg-gray-50 rounded-lg p-4 shadow" aria-label="Notifications Summary">
+                  <h3 className="font-semibold mb-2">Notifications</h3>
+                  <div className="flex gap-2">
+                    <span className="text-green-600 font-bold">{readNotifications} Read</span>
+                    <span className="text-yellow-600 font-bold">{unreadNotifications} Unread</span>
+                  </div>
+                </div>
+                {/* 10. Satisfaction Score */}
+                <div className="bg-gray-50 rounded-lg p-4 shadow" aria-label="Satisfaction Score">
+                  <h3 className="font-semibold mb-2">Satisfaction Score</h3>
+                  <div className="text-2xl font-bold text-yellow-500">{satisfactionScore} / 5</div>
+                </div>
+                {/* 11. Export & Download Reports */}
+                <div className="bg-gray-50 rounded-lg p-4 shadow" aria-label="Export Reports">
+                  <h3 className="font-semibold mb-2">Export Reports</h3>
+                  <button className="bg-blue-600 text-white px-3 py-1 rounded" tabIndex={0} aria-label="Download Analytics Report">
+                    Download PDF
+                  </button>
+                </div>
+                {/* 12. Comparison to Previous Periods */}
+                <div className="bg-gray-50 rounded-lg p-4 shadow" aria-label="Comparison to Previous Periods">
+                  <h3 className="font-semibold mb-2">Month-over-Month Change</h3>
+                  <div className={`text-2xl font-bold ${percentChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {percentChange >= 0 ? '+' : ''}{percentChange.toFixed(1)}%
+                  </div>
+                </div>
+                {/* 13. Heatmap of Maintenance Issues */}
+                <div className="bg-gray-50 rounded-lg p-4 shadow" aria-label="Maintenance Heatmap">
+                  <h3 className="font-semibold mb-2">Maintenance Heatmap</h3>
+                  <ul>
+                    {heatmapData.map((area, idx) => (
+                      <li key={idx} className="text-sm text-gray-700">{area.area}: <span className="font-semibold">{area.requests}</span> requests</li>
+                    ))}
+                  </ul>
+                </div>
+                {/* 14. Payment Success Rate */}
+                <div className="bg-gray-50 rounded-lg p-4 shadow" aria-label="Payment Success Rate">
+                  <h3 className="font-semibold mb-2">Payment Success Rate</h3>
+                  <div className="text-2xl font-bold text-green-600">{paymentSuccessRate}%</div>
+                  <div className="text-xs text-gray-500">{successfulPayments} successful, {failedPayments} failed</div>
+                </div>
+                {/* 15. Customizable Widgets (Demo) */}
+                <div className="bg-gray-50 rounded-lg p-4 shadow" aria-label="Customizable Widgets">
+                  <h3 className="font-semibold mb-2">Customizable Widgets</h3>
+                  <p className="text-sm text-gray-700">Drag and drop to rearrange your analytics widgets (coming soon).</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            {/* Favourite Properties Section */}
+            <div className="bg-white rounded-xl shadow-lg p-8 mb-12 border border-blue-100">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold flex items-center text-blue-700 tracking-tight">
+                  <HeartSolidIcon className="h-7 w-7 text-red-500 mr-3" />
+                  Favourite Properties
+                </h2>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="text"
+                    placeholder="Search favorites..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="border rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    aria-label="Search favorite properties"
+                  />
+                  <button
+                    onClick={openAddModal}
+                    className="text-blue-700 hover:text-blue-900"
+                    aria-label="Add favorite property"
+                  >
+                    <PlusIcon className="h-6 w-6" />
+                  </button>
+                </div>
+              </div>
+              <div className="flex space-x-4 mb-4 text-sm text-gray-600">
+                <button
+                  onClick={() => toggleSort('price')}
+                  className="flex items-center space-x-1 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+                  aria-label="Sort by price"
+                >
+                  <span>Price</span>
+                  {sortKey === 'price' ? (sortAsc ? <ChevronUpIcon className="h-4 w-4" /> : <ChevronDownIcon className="h-4 w-4" />) : null}
+                </button>
+                <button
+                  onClick={() => toggleSort('bedrooms')}
+                  className="flex items-center space-x-1 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+                  aria-label="Sort by bedrooms"
+                >
+                  <span>Bedrooms</span>
+                  {sortKey === 'bedrooms' ? (sortAsc ? <ChevronUpIcon className="h-4 w-4" /> : <ChevronDownIcon className="h-4 w-4" />) : null}
+                </button>
+              </div>
+              {paginatedProperties.length === 0 ? (
+                <div className="text-center text-gray-500 py-10 flex flex-col items-center">
+                  <ExclamationTriangleIcon className="h-12 w-12 mb-3 text-gray-400" />
+                  <p>No favorite properties found.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {paginatedProperties.map((property) => (
+                    <div
+                      key={property.id}
+                      className="flex flex-col md:flex-row items-center border rounded-xl shadow transition-shadow duration-300 hover:shadow-xl bg-white p-4 space-y-4 md:space-y-0 md:space-x-4"
+                    >
+                      <img
+                        src={property.image}
+                        alt={property.title}
+                        className="w-32 h-24 object-cover rounded-lg shadow-md"
+                      />
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-800">{property.title}</h3>
+                        <p className="text-gray-600 text-sm">{property.location}</p>
+                        <p className="text-blue-600 font-semibold">{property.priceDisplay}</p>
+                        <p className="text-gray-500 text-sm">{property.bedrooms} bed • {property.bathrooms} bath</p>
+                      </div>
+                      <div className="flex flex-col space-y-2 md:space-y-0 md:flex-row md:space-x-2">
+                        <button
+                          className="text-blue-600 hover:text-blue-800 transition-colors duration-200"
+                          onClick={() => setSelectedProperty(property)}
+                          aria-label={`View details of ${property.title}`}
+                        >
+                          <EyeIcon className="h-5 w-5" />
+                        </button>
+                        {removeConfirmId === property.id ? (
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => removeFavourite(property.id)}
+                              className="text-red-600 hover:text-red-800 transition-colors duration-200"
+                              aria-label={`Confirm remove ${property.title}`}
+                            >
+                              Confirm
+                            </button>
+                            <button
+                              onClick={cancelRemoveFavourite}
+                              className="text-gray-600 hover:text-gray-800 transition-colors duration-200"
+                              aria-label={`Cancel remove ${property.title}`}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => confirmRemoveFavourite(property.id)}
+                            className="text-red-600 hover:text-red-800 transition-colors duration-200"
+                            aria-label={`Remove ${property.title} from favorites`}
+                          >
+                            <TrashIcon className="h-5 w-5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex justify-center mt-6 space-x-4">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 rounded border border-gray-300 disabled:opacity-50"
+                    aria-label="Previous page"
+                  >
+                    Prev
+                  </button>
+                  <span className="px-3 py-1 rounded border border-gray-300">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1 rounded border border-gray-300 disabled:opacity-50"
+                    aria-label="Next page"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Notifications Section */}
+            <div className="bg-white rounded-xl shadow-lg p-8 mb-12 border border-yellow-100">
+              <h2 className="text-2xl font-bold flex items-center mb-6 text-yellow-700 tracking-tight">
+                <BellIcon className="h-7 w-7 text-yellow-500 mr-3" />
+                Notifications
+              </h2>
+              <div className="grid grid-cols-1 gap-6">
+                {notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className={`flex items-center p-4 rounded-xl border-l-4 cursor-pointer transition-colors duration-300 shadow hover:shadow-md ${notification.read ? 'bg-gray-50 border-gray-300' : 'bg-blue-50 border-blue-500'
+                      } hover:bg-blue-100`}
+                    onClick={() => markNotificationAsRead(notification.id)}
+                  >
+                    {/* Notification Type Icon */}
+                    {notificationTypeIcon[notification.type]}
+                    <div className="flex-1 ml-2">
+                      <h4 className="font-medium text-gray-800">{notification.title}</h4>
+                      <p className="text-gray-600 text-sm mt-1">{notification.message}</p>
+                    </div>
+                    <span className="text-xs text-gray-500 ml-4">{notification.time}</span>
+                    {!notification.read && (
+                      <div className="w-2 h-2 bg-blue-500 rounded-full ml-4"></div>
+                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteNotification(notification.id);
+                      }}
+                      className="ml-2 text-gray-400 hover:text-red-600"
+                    >
+                      <XMarkIcon className="h-5 w-5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Messages Section */}
+            <div className="bg-white rounded-lg shadow-md p-8 mb-12 transition-shadow duration-300 hover:shadow-xl border border-green-100">
+              <h2 className="text-2xl font-bold flex items-center mb-6 text-green-700 tracking-tight">
+                <ChatBubbleLeftRightIcon className="h-7 w-7 text-green-500 mr-3" />
+                Messages
+              </h2>
+              <div className="h-64 overflow-y-auto mb-4 space-y-3">
+                {messages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex ${message.isOwn ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div className={`max-w-xs p-3 rounded-lg ${message.isOwn
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-800'
+                      }`}>
+                      <p className="text-sm">{message.message}</p>
+                      {message.attachments && message.attachments.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          {message.attachments.map((file, idx) => (
+                            <div key={idx} className="text-xs bg-gray-100 rounded px-2 py-1 text-gray-700">
+                              {file.type.startsWith('image') ? (
+                                <img src={URL.createObjectURL(file)} alt="attachment" className="max-h-24 rounded" />
+                              ) : (
+                                <span>{file.name}</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between mt-1">
+                        <p className={`text-xs ${message.isOwn ? 'text-blue-200' : 'text-gray-500'}`}>
+                          {message.time}
+                        </p>
+                        {message.isOwn && (
+                          <span className="text-xs ml-2">
+                            {message.status === "Sent" && "✓"}
+                            {message.status === "Delivered" && "✓✓"}
+                            {message.status === "Read" && <span className="text-green-300">✓✓</span>}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {isTyping && (
+                  <div className="flex justify-start">
+                    <div className="max-w-xs p-3 rounded-lg bg-gray-200 text-gray-800 text-sm italic">
+                      Landlord is typing...
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="flex space-x-2 items-center">
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Type your message..."
+                  className="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+                  onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                />
+                <input
+                  type="file"
+                  multiple
+                  onChange={handleAttachment}
+                  className="hidden"
+                  id="attachment-input"
+                />
+                <label htmlFor="attachment-input" className="cursor-pointer bg-gray-200 px-2 py-2 rounded-lg hover:bg-gray-300">
+                  📎
+                </label>
+                <button
+                  className="bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-900 transition-colors duration-200"
+                  onClick={sendMessage}
+                >
+                  Send
+                </button>
+              </div>
+              {attachments.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {attachments.map((file, idx) => (
+                    <div key={idx} className="bg-gray-100 px-2 py-1 rounded text-xs text-gray-700">
+                      {file.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Maintenance Requests Section */}
+            <div className="bg-white rounded-lg shadow-md p-8 mb-12 transition-shadow duration-300 hover:shadow-xl border border-orange-100">
+              <h2 className="text-2xl font-bold flex items-center mb-6 text-orange-700 tracking-tight">
+                <WrenchScrewdriverIcon className="h-7 w-7 text-orange-500 mr-3" />
+                Maintenance Requests
+              </h2>
+
+              {/* New Request Form */}
+              <div className="mb-6 p-4 bg-gray-50 rounded-lg transition-shadow duration-300 hover:shadow-md">
+                <h3 className="font-medium mb-3">Submit New Request</h3>
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    placeholder="Request title"
+                    value={newMaintenanceRequest.title}
+                    onChange={(e) => setNewMaintenanceRequest(prev => ({ ...prev, title: e.target.value }))}
+                    className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <textarea
+                    placeholder="Describe the issue..."
+                    value={newMaintenanceRequest.description}
+                    onChange={(e) => setNewMaintenanceRequest(prev => ({ ...prev, description: e.target.value }))}
+                    className="w-full border rounded-lg px-3 py-2 h-20 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <div className="flex space-x-3">
+                    <select
+                      value={newMaintenanceRequest.priority}
+                      onChange={(e) => setNewMaintenanceRequest(prev => ({ ...prev, priority: e.target.value }))}
+                      className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="Low">Low Priority</option>
+                      <option value="Medium">Medium Priority</option>
+                      <option value="High">High Priority</option>
+                    </select>
+                    <button
+                      onClick={submitMaintenanceRequest}
+                      className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors duration-200"
+                    >
+                      Submit Request
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Existing Requests */}
+              <div className="space-y-3">
+                {maintenanceRequests.map((request) => (
+                  <div key={request.id} className="border rounded-lg p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      {editingRequestId === request.id ? (
+                        <div className="flex-1 space-y-2">
+                          <input
+                            type="text"
+                            value={editRequestData.title}
+                            onChange={e => setEditRequestData(data => ({ ...data, title: e.target.value }))}
+                            className="w-full border rounded-lg px-2 py-1 mb-1"
+                          />
+                          <textarea
+                            value={editRequestData.description}
+                            onChange={e => setEditRequestData(data => ({ ...data, description: e.target.value }))}
+                            className="w-full border rounded-lg px-2 py-1 mb-1"
+                          />
+                          <select
+                            value={editRequestData.priority}
+                            onChange={e => setEditRequestData(data => ({ ...data, priority: e.target.value }))}
+                            className="border rounded-lg px-2 py-1"
+                          >
+                            <option value="Low">Low Priority</option>
+                            <option value="Medium">Medium Priority</option>
+                            <option value="High">High Priority</option>
+                          </select>
+                          <div className="flex space-x-2 mt-2">
+                            <button
+                              className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-800"
+                              onClick={() => saveEditRequest(request.id)}
+                            >
+                              Save
+                            </button>
+                            <button
+                              className="bg-gray-300 text-gray-800 px-3 py-1 rounded hover:bg-gray-400"
+                              onClick={cancelEditRequest}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <h4 className="font-medium text-gray-800">{request.title}</h4>
+                          <div className="flex space-x-2">
+                            <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(request.status)}`}>
+                              {request.status}
+                            </span>
+                            <span className={`px-2 py-1 rounded-full text-xs ${getPriorityColor(request.priority)}`}>
+                              {request.priority}
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    {editingRequestId !== request.id && (
+                      <>
+                        <p className="text-gray-600 text-sm mb-2">{request.description}</p>
+                        <p className="text-gray-500 text-xs mb-2">Submitted: {request.date}</p>
+                        {/* Progress Bar */}
+                        <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                          <div
+                            className={`h-2 rounded-full ${request.status === "Completed"
+                                ? "bg-green-500 w-full"
+                                : request.status === "In Progress"
+                                  ? "bg-blue-500 w-2/3"
+                                  : "bg-yellow-500 w-1/3"
+                              }`}
+                          ></div>
+                        </div>
+                        <div className="flex space-x-2">
+                          {request.status === "Pending" && (
+                            <>
+                              <button
+                                className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-800"
+                                onClick={() => handleEditRequest(request)}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-800"
+                                onClick={() => cancelRequest(request.id)}
+                              >
+                                Cancel
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Payment Section */}
+            <div className="bg-white rounded-lg shadow-md p-8 mb-12 lg:col-span-2 transition-shadow duration-300 hover:shadow-xl border border-purple-100">
+              <h2 className="text-2xl font-bold flex items-center mb-6 text-purple-700 tracking-tight">
+                <CreditCardIcon className="h-7 w-7 text-purple-500 mr-3" />
+                Payment History
+              </h2>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-3 px-4">Date</th>
+                      <th className="text-left py-3 px-4">Type</th>
+                      <th className="text-left py-3 px-4">Amount</th>
+                      <th className="text-left py-3 px-4">Method</th>
+                      <th className="text-left py-3 px-4">Status</th>
+                      <th className="text-left py-3 px-4">Receipt</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paymentHistory.map((payment) => (
+                      <tr key={payment.id} className="border-b hover:bg-gray-50">
+                        <td className="py-3 px-4">{payment.date}</td>
+                        <td className="py-3 px-4">{payment.type}</td>
+                        <td className="py-3 px-4 font-semibold">{payment.amount}</td>
+                        <td className="py-3 px-4">{payment.method}</td>
+                        <td className="py-3 px-4">
+                          <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(payment.status)}`}>
+                            {payment.status}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          {payment.status === "Paid" && (
+                            <button
+                              className="text-purple-700 hover:underline"
+                              onClick={() => downloadReceipt(payment)}
+                            >
+                              Download
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="mt-4 flex justify-between items-center">
+                <div className="text-sm text-gray-600">
+                  Total Paid This Year: <span className="font-semibold text-green-600">${totalPaid}</span>
+                </div>
+                <button
+                  className="bg-purple-700 text-white px-4 py-2 rounded-lg hover:bg-purple-900 transition-colors duration-200"
+                  onClick={handleMakePayment}
+                  aria-label="Make Payment"
+                  tabIndex={0}
+                >
+                  Make Payment
+                </button>
+              </div>
+            </div>
+          </div>
+        </main>
+        {/* Property Detail Modal */}
+        {selectedProperty && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40" role="dialog" aria-modal="true" aria-label="Property Details">
+            <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full relative">
+              <button
+                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                onClick={closeModal}
+                aria-label="Close Property Details"
+                tabIndex={0}
+              >
+                &times;
+              </button>
+              <img src={selectedProperty.image} alt={selectedProperty.title} className="w-full h-48 object-cover rounded-lg mb-4" />
+              <h3 className="text-xl font-bold mb-2">{selectedProperty.title}</h3>
+              <p className="text-gray-600 mb-1">{selectedProperty.location}</p>
+              <p className="text-blue-600 font-semibold mb-1">{selectedProperty.price}</p>
+              <p className="text-gray-500 mb-1">{selectedProperty.bedrooms} bed • {selectedProperty.bathrooms} bath</p>
+              {/* Add more details as needed */}
+            </div>
+          </div>
+        )}
+        {/* Add Property Modal */}
+        {isAddModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40" role="dialog" aria-modal="true" aria-label="Add New Property">
+            <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full relative">
+              <button
+                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                onClick={closeAddModal}
+                aria-label="Close Add Property Modal"
+                tabIndex={0}
+              >
+                &times;
+              </button>
+              <h3 className="text-xl font-bold mb-4">Add New Property</h3>
+              <div className="space-y-4">
+                <input
+                  type="text"
+                  placeholder="Title"
+                  value={newProperty.title}
+                  onChange={(e) => setNewProperty(prev => ({ ...prev, title: e.target.value }))}
+                  className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <input
+                  type="text"
+                  placeholder="Location"
+                  value={newProperty.location}
+                  onChange={(e) => setNewProperty(prev => ({ ...prev, location: e.target.value }))}
+                  className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <input
+                  type="text"
+                  placeholder="Price (e.g., $1,200/month)"
+                  value={newProperty.price}
+                  onChange={(e) => setNewProperty(prev => ({ ...prev, price: e.target.value }))}
+                  className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <input
+                  type="number"
+                  placeholder="Bedrooms"
+                  value={newProperty.bedrooms}
+                  onChange={(e) => setNewProperty(prev => ({ ...prev, bedrooms: parseInt(e.target.value) }))}
+                  className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <input
+                  type="number"
+                  placeholder="Bathrooms"
+                  value={newProperty.bathrooms}
+                  onChange={(e) => setNewProperty(prev => ({ ...prev, bathrooms: parseInt(e.target.value) }))}
+                  className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <div className="flex justify-end space-x-2 mt-4">
+                  <button
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200"
+                    onClick={handleAddProperty}
+                  >
+                    Add Property
+                  </button>
+                  <button
+                    className="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors duration-200"
+                    onClick={closeAddModal}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default TenantDashboard;
