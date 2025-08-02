@@ -1,0 +1,48 @@
+import React from 'react';
+import {
+  Home,
+  LayoutDashboard,
+  Building2,
+  MessageSquare,
+  Wrench,
+  CreditCard
+} from 'lucide-react';
+
+const sections = [
+  { name: 'Dashboard', icon: LayoutDashboard },
+  { name: 'Properties', icon: Building2 },
+  { name: 'Message', icon: MessageSquare },
+  { name: 'Maintenance', icon: Wrench },
+  { name: 'Payment', icon: CreditCard },
+];
+
+const TenantSideBar = ({ setCurrentSection }) => {
+  return (
+    <aside className="w-64 bg-gray-100 h-full flex flex-col p-4">
+      {/* Top section with home icon and text */}
+      <div className="flex items-center space-x-2 mb-8 cursor-pointer">
+        <Home className="w-6 h-6 text-blue-600" />
+        <span className="text-xl font-bold text-blue-600">Ghar_Nishchit</span>
+      </div>
+
+      {/* Navigation sections */}
+      <nav className="flex flex-col space-y-4">
+        {sections.map((section) => {
+          const IconComponent = section.icon;
+          return (
+            <button
+              key={section.name}
+              onClick={() => setCurrentSection(section.name)}
+              className="flex items-center space-x-3 text-gray-700 hover:text-blue-600 text-left focus:outline-none p-2 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              <IconComponent className="w-5 h-5" />
+              <span>{section.name}</span>
+            </button>
+          );
+        })}
+      </nav>
+    </aside>
+  );
+};
+
+export default TenantSideBar;
